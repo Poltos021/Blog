@@ -8,7 +8,7 @@ import { registerValidaton } from "./validations/auth.js";
 import UserModel from "./models/User.js";
 
 mongoose
-    .connect('mongodb+srv://admin:123@cluster0.xohhhvc.mongodb.net/blog?retryWrites=true&w=majority')
+    .connect('db')
     .then(() => console.log("DB OKAY!"))
     .catch((err) => console.log("ERROR DB!", err));
 
