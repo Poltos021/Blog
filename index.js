@@ -1,103 +1,54 @@
-import express  from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import express from "express";
 import mongoose from "mongoose";
-import { validationResult } from "express-validator"; 
 
-import { registerValidaton } from "./validations/auth.js";
-import UserModel from "./models/User.js";
+import multer from "multer";
+
+import { registerValidaton, loginValidaton, postCreateValidaton } from "./validations.js";
+
+import {checkAuth, handleValidationErrors} from "./utils/index.js";
+import { UserContoller, PostContoller } from './controllers/index.js';
 
 mongoose
-    .connect('db')
+    .connect('')
     .then(() => console.log("DB OKAY!"))
     .catch((err) => console.log("ERROR DB!", err));
 
 const app = express();
+app.use('/uploads', express.static('uploads'));
+
+const storage = multer.diskStorage({
+    destination: (_, __, cb) => {
+        cb(null, 'uploads');
+    },
+    filename: (_, file, cb) => {
+        cb(null, file.originalname);
+    },
+});
+
+const upload = multer({ storage });
 
 app.use(express.json());
 
-app.post('/login', async (req, res) => {
-    try{
-        const user = await UserModel.findOne({email: req.body.email});
+app.post('/login', loginValidaton, handleValidationErrors, UserContoller.login);
+app.post('/register', registerValidaton, handleValidationErrors, UserContoller.register);
+app.get('/me', checkAuth, UserContoller.getMe);
 
-        if (!user){
-            return req.status(404).json({
-                message: '~Error Login!~'
-            });
-        }
-
-        const isValidPass = await bcrypt.compare(req.body.password, user._doc.passwordHash);
-        if (!isValidPass) {
-            return req.status(404).json({
-                message: '~Error Login or Password!~'
-            });
-        }
-
-        const token = jwt.sign({
-            _id: user._id,
-        }, 'b562da53652ed82e645dcac1d2630c3e', {
-            expiresIn: '30d',
-        });
-        
-        const { passwordHash, ...userData } = user._doc;
-
-        res.json({
-            success: true,
-            token,
-        });
-
-    } catch (err){
-        console.log(err);
-        res.status(500).json({
-            message: 'Не удача входа!',
-        });
-    }
-});
-
-app.post('/register', registerValidaton, async (req, res) => {
-   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()){
-        return res.status(400).json(errors.array());
-    }
-
-    const password = req.body.password;
-    const salt = await bcrypt.genSalt(10);
-    const Hash = await bcrypt.hash(password, salt);
-
-    const doc = new UserModel({
-        email: req.body.email,
-        fullName: req.body.fullName,
-        avatarUrl: req.body.avatarUrl,
-        passwordHash: Hash,
-        });
-
-    const user = await doc.save();
-    const token = jwt.sign({
-        _id: user._id,
-    }, 'b562da53652ed82e645dcac1d2630c3e', {
-        expiresIn: '30d',
-    });
-
-    const { passwordHash, ...userData } = user._doc;
-
+app.post('/uploads', checkAuth, upload.single('image'), (req, res) => {
     res.json({
-        ...userData,
-        token,
+        url: `/uploads/${req.file.originalname}`
     });
-   } catch (err){
-    console.log(err);
-        res.status(500).json({
-            message: 'Не удача',
-        });
-   }
 });
+
+app.get('/posts', PostContoller.getAll);
+app.get('/posts/:id', PostContoller.getOne);
+app.post('/posts', checkAuth, postCreateValidaton, handleValidationErrors, PostContoller.create);
+app.delete('/posts/:id', checkAuth, PostContoller.remove);
+app.patch('/posts/:id', checkAuth, handleValidationErrors, PostContoller.update);
 
 app.listen(4444, (err) => {
     if (err){
         return console.log(err)
     }
-
-    console.log('OK');
+    console.log('Server normal');
 });
 
