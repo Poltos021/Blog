@@ -4,13 +4,13 @@ import cors from "cors";
 
 import multer from "multer";
 
-import { registerValidaton, loginValidaton, postCreateValidaton } from "./validations.js";
+import { registerValidaton, loginValidaton, postCreateValidaton, commentCreateValidaton } from "./validations.js";
 
 import {checkAuth, handleValidationErrors} from "./utils/index.js";
-import { UserContoller, PostContoller } from './controllers/index.js';
+import { UserContoller, PostContoller, CommentContoller } from './controllers/index.js';
 
 mongoose
-    .connect('')
+    .connect('mongodb+srv://admin:123@cluster0.xohhhvc.mongodb.net/blog?retryWrites=true&w=majority')
     .then(() => console.log("DB OKAY!"))
     .catch((err) => console.log("ERROR DB!", err));
 
@@ -49,6 +49,10 @@ app.get('/posts/:id', PostContoller.getOne);
 app.post('/posts', checkAuth, postCreateValidaton, handleValidationErrors, PostContoller.create);
 app.delete('/posts/:id', checkAuth, PostContoller.remove);
 app.patch('/posts/:id', checkAuth, handleValidationErrors, PostContoller.update);
+
+app.post('/comment', checkAuth, commentCreateValidaton, handleValidationErrors, CommentContoller.create);
+app.get('/comment/:id', checkAuth, commentCreateValidaton, handleValidationErrors, CommentContoller.getCommentsOnePosts);
+app.get('/comment', checkAuth, handleValidationErrors, CommentContoller.getAll);
 
 app.listen(4444, (err) => {
     if (err){

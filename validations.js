@@ -18,3 +18,7 @@ export const postCreateValidaton = [
     body('tags', 'Укажите верный массив тэгов!').optional().isArray(), 
     body('imgUrl', 'неверная ссылка на аватар!').optional().isString(), 
 ];
+
+export const commentCreateValidaton = [
+    body('text', 'Текст должен содержать минимум 5 символов!').isLength({ min: 5 }).isString(), 
+];

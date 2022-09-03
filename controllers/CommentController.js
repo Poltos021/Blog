@@ -1,71 +1,54 @@
-import CommentModel from '../models/Comment';
+import CommentModel from '../models/Comment.js'
+import PostModel from '../models/Post.js'
 
-export const getLastTags = async (req, res) =>{
+export const getLastComment = async (req, res) =>{
   try{
-    const comments = await PostModel.find().limit(5).exec();
+    const comments = await CommentModel.find().limit(3).exec();
     
-    const tags = posts.map(obj =>  obj.tags).flat().slice(0,5);
+    // const tags = posts.map(obj =>  obj.tags).flat().slice(0,5);
 
-    res.json(tags);
+    res.json(comments);
 } catch (err) {
   console.log(err);
     res.status(500).json({ 
-      message: 'Не удалось найти теги!',
+      message: 'Не удалось найти коментарии!',
     });
 }
 };
 
 export const getAll = async (req, res) => {
   try{
-      const posts = await PostModel.find().populate('user').exec();
-      res.json(posts);
+      const comments = await CommentModel.find().populate('user').exec();
+      res.json(comments);
   } catch (err) {
     console.log(err);
       res.status(500).json({
-        message: 'Не удалось найти статьи!',
+        message: 'Не удалось найти коментарии!',
       });
   }
 };
 
-export const getOne = async (req, res) => {
+export const getCommentsOnePosts = async (req, res) => {
   try{
-      const postId = req.params.id;
-      PostModel.findOneAndUpdate({
-          _id: postId,   
-      }, {
-        $inc: { viewsCount: 1}
-      }, {
-        returnDocument: 'after',
-      }, 
-        (err, doc) => {
-          if (err) {
-            console.log(err);
-            return res.status(500).json({
-              message: 'Не удалось вернуть статью!',
-            });
-          }
-        if (!doc){
-            return res.status(404).json({
-              message: 'Не удалось найти статью!',
-            });
-        }
+    const postId = await PostModel.find({id: req.body._id});
 
-        res.json(doc);
+    const comments = await CommentModel.find().limit(3).exec();
+    
+    // const tags = posts.map(obj =>  obj.tags).flat().slice(0,5);
 
-        },
-      ).populate('user');
-  } catch (err) {
-    console.log(err);
-      res.status(500).json({
-        message: 'Не удалось найти статьи!',
-      });
+    res.json(comments);
+} catch (err) {
+  console.log(err);
+    res.status(500).json({ 
+      message: 'Не удалось найти коментарии!',
+    });
   }
 };
 
 export const remove = async (req, res) => {
   try{
       const postId = req.params.id;
-      PostModel.findByIdAndRemove({
+      CommentModel.findByIdAndRemove({
         _id: postId,
       }, (err, doc) => {
         if (err){
@@ -98,38 +81,37 @@ export const remove = async (req, res) => {
 
 export const create = async (req, res) => {
     try {
-      const doc = new PostModel({
-        title: req.body.title,
+
+      const postId = await PostModel.findOne({id: req.body._id});
+
+      const doc = new CommentModel({
         text: req.body.text,
-        imageUrl: req.body.imageUrl,
-        tags: req.body.tags,
         user: req.userId,
+        post: postId,
       });
   
-      const post = await doc.save();
+      const comment = await doc.save();
   
-      res.json(post);
+      res.json(comment);
 
     } catch (err) {
       console.log(err);
       res.status(500).json({
-        message: 'Не удалось создать статью!',
+        message: 'Не удалось создать коментарий!',
       });
     }
   };
 
 export const update = async (req, res) => {
     try { 
-      const postId = req.params.id;
+      const commentId = req.params.id;
 
-      await PostModel.updateOne({
-        _id: postId,
+      await CommentModel.updateOne({
+        _id: commentId,
       },{
-        title: req.body.title,
         text: req.body.text,
-        imageUrl: req.body.imageUrl,
         user: req.userId,
-        tags: req.body.tags,
+        post: req._id,
       });
 
       res.json({
@@ -139,7 +121,7 @@ export const update = async (req, res) => {
     catch (err) {
       console.log(err);
       return res.status(500).json({
-        message: 'Не удалось обновить статью!',
+        message: 'Не удалось обновить комментарий!',
       });
     }
 };
