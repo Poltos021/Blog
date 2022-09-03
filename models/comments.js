@@ -11,10 +11,18 @@ const CommentsSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    imageUrl: String,
+    post: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
+        required: true,
+    },
+    likes: {
+        type: Number,
+        default: 0,
+    }
 }, {
     timestamps: true,
 },
 );
 
-export default mongoose.model('Commetn', CommentsSchema);
+export default mongoose.model('Comment', CommentsSchema);
